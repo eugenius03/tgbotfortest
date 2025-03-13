@@ -19,7 +19,6 @@ class Payment:
 
     async def generate_url(self, order_id, amount, description):
         data = {k: v for k, v in self.data.items()}
-        # створення даних по поточному платежу
         data['action'] = "pay"
         data["amount"] = amount
         data["currency"] = "UAH"
@@ -34,7 +33,6 @@ class Payment:
         try:
             res = requests.post(url='https://www.liqpay.ua/api/3/checkout/', data=params)
             if res.status_code == 200:
-                print("+")
                 return res.url
             else:
                 logging.warning(f"time {datetime.now(pytz.timezone('Europe/Kiev'))}| incorrect status code form response - {res.status_code}, must be 200, "
