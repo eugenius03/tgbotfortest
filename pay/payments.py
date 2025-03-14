@@ -23,7 +23,7 @@ class Payment:
         data["amount"] = amount
         data["currency"] = "UAH"
         data["language"] = "uk"
-        data["description"] = f"Оплата замовлення в боті. {description}"
+        data["description"] = f"Оплата замовлення в боті.\n{description}"
         data["order_id"] = order_id
         data_to_sign = self.liqpay.data_to_sign(data)
         params = {'data': data_to_sign,

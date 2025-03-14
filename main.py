@@ -7,12 +7,11 @@ from aiogram import Bot, Dispatcher, loggers
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from db.engine import create_tables
-from routers import command_router
-from routers import inline_router
+from routers import command_router, inline_router, message_router
+
 
 
 async def main():
-    global LIQ_PUBLIC, LIQ_PRIVATE
 
     load_dotenv()
     logging.basicConfig(level=logging.INFO)
@@ -22,6 +21,7 @@ async def main():
     await create_tables()
     dp.include_router(command_router)
     dp.include_router(inline_router)
+    dp.include_router(message_router)
 
 
     logging.info("Bot started")
@@ -35,6 +35,6 @@ if __name__ == "__main__":
         format="%(message)s",
         handlers=[logging.FileHandler("bot.log", encoding="utf-8")]
     )
-    logging.getLogger("aiogram").setLevel(logging.ERROR)
+    logging.getLogger("aiogram").setLevel(logging.DEBUG)
 
     asyncio.run(main())

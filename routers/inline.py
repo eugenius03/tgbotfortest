@@ -1,13 +1,16 @@
 from aiogram import Bot, Router, F
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from pay.payments import payment
 from db.orm import AsyncORM
 import asyncio
+from .Cart import cart, Cart
+from .commands import get_inline
 
 inline_router = Router()
 
 @inline_router.callback_query(F.data.in_({"Buckwheat", "Milk", "Bread"}))
 async def inline_handler(call: CallbackQuery):
+    await call.answer()
     price = {
         "Buckwheat": 100,
         "Milk": 60,
@@ -15,31 +18,51 @@ async def inline_handler(call: CallbackQuery):
     }
     product = call.data
     total = price[call.data]
-    order_id = await AsyncORM.create_order(user_id=call.from_user.id, product=product, total=total, status="created")
-    url = await payment.generate_url(order_id=order_id, amount = total, description=product)
-    msg = await call.message.answer(url)
-    await payday(order_id, product, total, call, msg, url)
+    if cart.get(call.from_user.id):
+        cart[call.from_user.id].add_item(product, total)
+    else:
+        cart[call.from_user.id] = Cart(product, total)
+    await call.message.answer(
+        f"Товар {product} додано у кошик.\n"
+        f"\nВаш кошик:\n{cart[call.from_user.id].get_items()}"
+        f"\nНа суму: {cart[call.from_user.id].get_total()} грн",
+        reply_markup = get_keyboard()
+        )
     
+def get_keyboard():
+    keyboard = [
+        [KeyboardButton(text="💵 До сплати")],
+        [KeyboardButton(text="🛒 Очистити кошик"), KeyboardButton(text="📦 Товари")]
+    ]
+    keyboard = ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+    return keyboard
+
+@inline_router.callback_query(F.data == "back")
+async def buck_info(call: CallbackQuery):
+    await call.answer()
+    await call.message.delete()
+    await call.message.answer(
+        "Доступні товари (натисніть, щоб додати у кошик):", reply_markup=get_inline()
+    )
 
 
-async def payday(order_id, product, total, call, msg, url):
-    response = payment.get_order_status(order_id)
-    time=0
-    while(response == False or time < 180):
-        await asyncio.sleep(5)
-        response = payment.get_order_status(order_id)
-        time+=5
+@inline_router.callback_query(F.data.contains("_info"))
+async def buck_info(call: CallbackQuery):
+    await call.answer()
+    await call.message.delete()
+    desc = {
+        "Buckwheat_info": {"text": "Buckwheat - 100 UAH", "data" : "Buckwheat", "link": "https://photobooth.cdn.sports.ru/preset/news/e/87/1bb5c8ae94acab67ce33a43775356.jpeg"},
+        "Bread_info": {"text": "Bread - 20 UAH", "data" : "Bread", "link": "https://shelfcooking.com/wp-content/uploads/2020/07/Rustic-Bread.jpg"},
+        "Milk_info": {"text": "Milk - 60 UAH", "data" : "Milk", "link": "https://ih1.redbubble.net/image.3626199979.2902/flat,750x,075,f-pad,750x1000,f8f8f8.jpg"},
 
-    if response.get("status") == "success":
-        await call.message.answer(f"Оплата пройшла успішно! Ваше замовлення: {product} на суму {total} грн")
-        await AsyncORM.edit_status(order_id, "Done")
-    elif response.get("status") == "try_again":
-        await call.message.answer(f"Помилка при оплаті. Спробуйте ще раз")
-        time=0
-        while(response.get("status") == "try_again" or time < 180):
-            await asyncio.sleep(5)
-            response = payment.get_order_status(order_id)
-            time+=5
-        if response.get("status") == "success":
-            await call.message.answer(f"Оплата пройшла успішно! Ваше замовлення: {product} на суму {total} грн")
-            await AsyncORM.edit_status(order_id, "Done")
+    }
+    desc = desc[call.data]
+    keyboard = [
+        [InlineKeyboardButton(text=desc["text"], callback_data=desc["data"])],
+        [InlineKeyboardButton(text="Back", callback_data="back")],
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    await call.message.answer_photo(
+        photo=desc["link"],
+        caption="Description", reply_markup=keyboard)
+    

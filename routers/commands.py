@@ -18,14 +18,19 @@ async def command_start_handler(message: Message, bot: Bot):
 @command_router.message(Command("products"))
 async def command_products_handler(message: Message):
     await message.answer(
-        "Доступні товари (натисніть, щоб додати у кошик):", reply_markup=get_keyboard()
+        "Доступні товари (натисніть, щоб додати у кошик):", reply_markup=get_inline()
     )
 
-def get_keyboard():
+async def send_products(message: Message):
+    await message.answer(
+        "Доступні товари (натисніть, щоб додати у кошик):", reply_markup=get_inline()
+    )
+
+def get_inline():
     keyboard = [
-        [InlineKeyboardButton(text="Buckwheat - 100 UAH", callback_data="Buckwheat")],
-        [InlineKeyboardButton(text="Milk - 60 UAH", callback_data="Milk")],
-        [InlineKeyboardButton(text="Bread - 20 UAH", callback_data="Bread")]
+        [InlineKeyboardButton(text="Buckwheat - 100 UAH", callback_data="Buckwheat_info")],
+        [InlineKeyboardButton(text="Milk - 60 UAH", callback_data="Milk_info")],
+        [InlineKeyboardButton(text="Bread - 20 UAH", callback_data="Bread_info")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard)
 
