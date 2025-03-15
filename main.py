@@ -32,9 +32,10 @@ async def main():
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
-        format="%(message)s",
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%d-%m-%Y %H:%M:%S",
         handlers=[logging.FileHandler("bot.log", encoding="utf-8")]
     )
-    logging.getLogger("aiogram").setLevel(logging.DEBUG)
+    logging.getLogger("aiogram").setLevel(logging.ERROR)
 
     asyncio.run(main())
