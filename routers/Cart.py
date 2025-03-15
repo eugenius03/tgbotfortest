@@ -4,6 +4,7 @@ class Cart:
         self.total = price
         self.quantity = {}
         self.quantity[item] = 1
+        self.order_id = None
 
     def add_item(self, item, price):
         self.total += price
